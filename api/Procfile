@@ -1,0 +1,3 @@
+api: uvicorn --port $PORT api:app --reload
+answersApi: uvicorn --port $PORT answersApi:app --reload
+trackApi: uvicorn --port $PORT trackApi:app --reload
