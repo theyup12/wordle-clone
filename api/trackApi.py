@@ -12,8 +12,6 @@ from datetime import datetime
 
 
 class Settings(BaseSettings):
-    database: str
-    database2: str
     stats_database: str
     logging_config: str
 
