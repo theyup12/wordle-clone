@@ -1,9 +1,5 @@
-PRAGMA foreign_keys = OFF;
-
-DROP VIEW IF EXISTS wins;
-DROP VIEW IF EXISTS streaks;
-DROP TABLE IF EXISTS games;
-
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
 CREATE TABLE games(
     user_uuid GUID,
     user_id INTEGER NOT NULL,
@@ -13,9 +9,7 @@ CREATE TABLE games(
     won BOOLEAN,
     PRIMARY KEY(game_id)
 );
-
 CREATE INDEX games_won_idx ON games(won);
-
 CREATE VIEW wins
 AS
     SELECT
@@ -29,7 +23,6 @@ AS
         user_id
     ORDER BY
         COUNT(won) DESC;
-
 CREATE VIEW streaks
 AS
     WITH ranks AS (
@@ -68,6 +61,4 @@ AS
     ORDER BY
         user_id,
         finished;
-
-PRAGMA analysis_limit=1000;
-PRAGMA optimize;
+COMMIT;
