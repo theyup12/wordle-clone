@@ -22,7 +22,7 @@ with contextlib.closing(sqlite3.connect(DATABASE)) as db:
             record_s2.append(row)
         else:
             record_s3.append(row)
-    for user in db.execute("SELECT * FROM users LIMIT 10"):
+    for user in db.execute("SELECT * FROM users"):
         record_user.append(user)
 # user table have user name, id, and uuid
 # game table have user id, game id, uuid match to user table and other stay the same.
@@ -41,25 +41,29 @@ for row in record_user:
     data = (uuid.uuid4(), row[0], row[1])
     c.execute("""INSERT INTO users(user_uuid, user_id, username) VALUES(?, ?, ?)""", data)
 
-c.execute("SELECT * FROM users")
-print(c.fetchall())
+conn.commit()
+c.execute("SELECT * FROM users WHERE user_id = 4122")
+print(int(c.fetchall()[0][0]))
 
 # game = VALUES(user_id, game_id,'2022-03-03', guesses = 4, won = 0)
-# with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
-#     with open(SCHEMA) as f:
-#         db.executescript(f.read())
-#
-#     db.execute("ATTACH './var/user.db' as Users")
-#     for row in record_s1:
-#         while True:
-#             try:
-#                 uid = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
-#                 data = (uid, row[0], row[1], row[2], row[3], row[4])
-#                 db.execute("""
-#                             INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
-#                             VALUES(?, ?, ?, ?, ?, ?)
-#                             """, data)
-#             except sqlite3.IntegrityError:
-#                 continue
-#             break
-#     db.commit()
+with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
+    with open(SCHEMA) as f:
+        db.executescript(f.read())
+
+    db.execute("ATTACH './var/user.db' as Users")
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    for row in record_s1:
+        while True:
+            try:
+                cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
+                uid = cur.fetchone()[0]
+                data = (uid, row[0], row[1], row[2], row[3], row[4])
+                db.execute("""
+                            INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
+                            VALUES(?, ?, ?, ?, ?, ?)
+                            """, data)
+            except sqlite3.IntegrityError:
+                continue
+            break
+    db.commit()
