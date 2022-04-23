@@ -1,7 +1,6 @@
 import contextlib
 import sqlite3
 import uuid
-import zlib
 DATABASE = './var/stats.db'
 DATABASE_s1 = './var/stats_s1.db'
 DATABASE_s2 = './var/stats_s2.db'
@@ -43,8 +42,9 @@ for row in record_user:
     c.execute("""INSERT INTO users(user_uuid, user_id, username) VALUES(?, ?, ?)""", data)
 
 conn.commit()
-# c.execute("SELECT * FROM users WHERE user_id = 4122")
-# print(int(c.fetchall()[0][0]))
+# for row in c.execute("SELECT * FROM users WHERE user_id = 4122"):
+#     check = row[0]
+# print(check)
 
 # game = VALUES(user_id, game_id,'2022-03-03', guesses = 4, won = 0)
 with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
@@ -52,7 +52,6 @@ with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
         db.executescript(f.read())
 
     db.execute("ATTACH './var/user.db' as Users")
-
     for row in record_s1:
         while True:
             try:
@@ -66,7 +65,14 @@ with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
             except sqlite3.IntegrityError:
                 continue
             break
-    # db.execute("SELECT * FROM users WHERE user_id = 4122")
     # for row in db.execute("SELECT * FROM games WHERE user_id = 4122"):
-    #     print(row)
+    #     cur = row[0]
+    #     print(row[0])
+    # if check == cur:
+    #     print("true")
+    # else:
+    #     print(check)
+    #     print(cur)
+    #     print("false")
+    # db.execute("DETACH DATABASE './var/user.db';")
     db.commit()
