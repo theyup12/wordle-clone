@@ -5,13 +5,13 @@ DROP VIEW IF EXISTS streaks;
 DROP TABLE IF EXISTS games;
 
 CREATE TABLE games(
-    user_uuid GUID,
+    user_uuid GUID NOT NULL,
     user_id INTEGER NOT NULL,
     game_id INTEGER NOT NULL,
     finished DATE DEFAULT CURRENT_TIMESTAMP,
     guesses INTEGER,
     won BOOLEAN,
-    PRIMARY KEY(game_id)
+    PRIMARY KEY(game_id, user_uuid)
 );
 
 CREATE INDEX games_won_idx ON games(won);

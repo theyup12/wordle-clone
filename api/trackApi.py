@@ -1,5 +1,3 @@
-# v2
-
 import logging.config
 import sqlite3
 import contextlib
@@ -13,6 +11,10 @@ from datetime import datetime
 
 class Settings(BaseSettings):
     stats_database: str
+    stats_database_s1: str
+    stats_database_s2: str
+    stats_database_s3: str
+    user_database: str
     logging_config: str
 
     class Config:
@@ -61,7 +63,7 @@ def post_result(current_user: int, game: GameResult, response: Response, db: sql
     g = dict(game)
     g.update({"user_id": current_user})
     try:
-        # add word into the list_word database
+        # first find the uuid from the user table and then transfer to games table
         add_game = db.execute(
             """
             INSERT INTO games(user_id, game_id, finished, guesses, won) 
@@ -81,6 +83,7 @@ def post_result(current_user: int, game: GameResult, response: Response, db: sql
 
 @app.get("/wordle-statistics/{current_user}/{current_date}")
 def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = Depends(get_db)):
+    # find the uuid using the user id from the user table and then find it from the game table
     current_stats = db.execute(
         """SELECT guesses,won FROM games WHERE user_id = ? ORDER BY finished """, [current_user]
     )
