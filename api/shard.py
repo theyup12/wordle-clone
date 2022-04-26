@@ -15,7 +15,7 @@ record_s3 = []
 record_user = []
 
 with contextlib.closing(sqlite3.connect(DATABASE)) as db:
-    for row in db.execute("SELECT * FROM games LIMIT 10 "):
+    for row in db.execute("SELECT * FROM games LIMIT 20;"):
         if row[0] % 3 == 0:
             record_s1.append(row)
         elif row[0] % 3 == 1:
