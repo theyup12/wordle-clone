@@ -3,10 +3,11 @@ import sqlite3
 import contextlib
 from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
+import uuid
 from datetime import datetime
 # connect database setting from .env file
 # convert data from stats.db to populated.sql
-# sqlite3 ./var/stats.db .dump > ./share/populated.sql
+# sqlite3 ./var/stats.db .dump > ./share/track/populated.sql
 
 
 class Settings(BaseSettings):
@@ -42,7 +43,8 @@ class UserStats(BaseModel):
 
 
 def get_db():
-    with contextlib.closing(sqlite3.connect(settings.stats_database)) as db:
+    # db_list = [settings.stats_database_s1, settings.stats_database_s2, settings.stats_database_s3, settings.user_database]
+    with contextlib.closing(sqlite3.connect(settings.user_database)) as db:
         db.row_factory = sqlite3.Row
         yield db
 # use for debug the code
@@ -60,23 +62,37 @@ logging.config.fileConfig(settings.logging_config)
 
 @app.post("/game-result/{current_user}", status_code=status.HTTP_201_CREATED)
 def post_result(current_user: int, game: GameResult, response: Response, db: sqlite3.Connection = Depends(get_db)):
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    if int(current_user) % 3 == 0:
+        db.execute("ATTACH './var/stats_s1.db' as stats")
+    elif int(current_user) % 3 == 1:
+        db.execute("ATTACH './var/stats_s2.db' as stats")
+    else:
+        db.execute("ATTACH './var/stats_s3.db' as stats")
+
+    cur = db.execute("SELECT user_uuid FROM users WHERE user_id = ?", [current_user])
+    uid = cur.fetchone()[0]
     g = dict(game)
     g.update({"user_id": current_user})
+    g.update({"user_uuid": uid})
     try:
         # first find the uuid from the user table and then transfer to games table
         add_game = db.execute(
             """
-            INSERT INTO games(user_id, game_id, finished, guesses, won) 
-            VALUES(:user_id, :game_id, :finished, :guesses, :won)
+            INSERT INTO stats.games(user_uuid, user_id, game_id, finished, guesses, won)
+            VALUES(:user_uuid, :user_id, :game_id, :finished, :guesses, :won)
             """, g
         )
         db.commit()
+
     except sqlite3.IntegrityError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"type": type(error).__name__, "msg": str(error)}
         )
     g["id"] = add_game.lastrowid
+    g["user_uuid"] = str(uid)
     response.headers["Location"] = f"/game-result/{g['id']}"
     return g
 
@@ -84,11 +100,23 @@ def post_result(current_user: int, game: GameResult, response: Response, db: sql
 @app.get("/wordle-statistics/{current_user}/{current_date}")
 def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = Depends(get_db)):
     # find the uuid using the user id from the user table and then find it from the game table
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    if int(current_user) % 3 == 0:
+        db.execute("ATTACH './var/stats_s1.db' as stats")
+    elif int(current_user) % 3 == 1:
+        db.execute("ATTACH './var/stats_s2.db' as stats")
+    else:
+        db.execute("ATTACH './var/stats_s3.db' as stats")
+
+    cur = db.execute("SELECT user_uuid FROM users WHERE user_id = ?", [current_user])
+    uid = cur.fetchone()[0]
+
     current_stats = db.execute(
-        """SELECT guesses,won FROM games WHERE user_id = ? ORDER BY finished """, [current_user]
+        """SELECT guesses,won FROM stats.games WHERE user_uuid = ? ORDER BY finished """, [uid]
     )
     streaks_stats = db.execute(
-        """SELECT streak, beginning, ending FROM streaks WHERE user_id = ? ORDER BY streak DESC""", [current_user]
+        """SELECT streak, beginning, ending FROM stats.streaks WHERE user_uuid = ? ORDER BY streak DESC""", [uid]
     )
     rows = current_stats.fetchall()
     streaks_rows = streaks_stats.fetchall()
@@ -132,32 +160,28 @@ def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = De
 
 @app.get("/top-wins-users/")
 def game_stats(db: sqlite3.Connection = Depends(get_db)):
-    top_users = db.execute(
-        """
-        SELECT 
-            *
-        FROM 
-            wins 
-        INNER JOIN users ON users.user_id = wins.user_id
-        LIMIT 10;
-        """
-    )
-    return{"Top 10 Users": top_users.fetchall()}
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    db.execute("ATTACH './var/stats_s1.db' as stats_s1")
+    db.execute("ATTACH './var/stats_s2.db' as stats_s2")
+    db.execute("ATTACH './var/stats_s3.db' as stats_s3")
+    top_users_s1 = db.execute("""SELECT * FROM wins INNER JOIN users ON users.user_id = wins.user_id LIMIT 10; """)
+    return{"Top 10 Users": top_users_s1.fetchall()}
 
-
-@app.get("/top-streaks-users")
-def game_stats(db: sqlite3.Connection = Depends(get_db)):
-    top_users = db.execute(
-        """
-        SELECT 
-            *
-        FROM 
-            streaks
-        INNER JOIN users ON users.user_id = streaks.user_id
-        ORDER BY
-            streak DESC
-        LIMIT 10;
-        """
-    )
-    return {"Top 10 Users": top_users.fetchall()}
-
+#
+# @app.get("/top-streaks-users")
+# def game_stats(db: sqlite3.Connection = Depends(get_db)):
+#     top_users = db.execute(
+#         """
+#         SELECT
+#             *
+#         FROM
+#             streaks
+#         INNER JOIN users ON users.user_id = streaks.user_id
+#         ORDER BY
+#             streak DESC
+#         LIMIT 10;
+#         """
+#     )
+#     return {"Top 10 Users": top_users.fetchall()}
+#

@@ -11,7 +11,7 @@ CREATE TABLE games(
     finished DATE DEFAULT CURRENT_TIMESTAMP,
     guesses INTEGER,
     won BOOLEAN,
-    PRIMARY KEY(game_id, user_uuid)
+    PRIMARY KEY(game_id)
 );
 
 CREATE INDEX games_won_idx ON games(won);
@@ -19,14 +19,14 @@ CREATE INDEX games_won_idx ON games(won);
 CREATE VIEW wins
 AS
     SELECT
-        user_id,
+        user_uuid,
         COUNT(won)
     FROM
         games
     WHERE
         won = TRUE
     GROUP BY
-        user_id
+        user_uuid
     ORDER BY
         COUNT(won) DESC;
 
@@ -34,20 +34,20 @@ CREATE VIEW streaks
 AS
     WITH ranks AS (
         SELECT DISTINCT
-            user_id,
+            user_uuid,
             finished,
-            RANK() OVER(PARTITION BY user_id ORDER BY finished) AS rank
+            RANK() OVER(PARTITION BY user_uuid ORDER BY finished) AS rank
         FROM
             games
         WHERE
             won = TRUE
         ORDER BY
-            user_id,
+            user_uuid,
             finished
     ),
     groups AS (
         SELECT
-            user_id,
+            user_uuid,
             finished,
             rank,
             DATE(finished, '-' || rank || ' DAYS') AS base_date
@@ -55,18 +55,18 @@ AS
             ranks
     )
     SELECT
-        user_id,
+        user_uuid,
         COUNT(*) AS streak,
         MIN(finished) AS beginning,
         MAX(finished) AS ending
     FROM
         groups
     GROUP BY
-        user_id, base_date
+        user_uuid, base_date
     HAVING
         streak > 1
     ORDER BY
-        user_id,
+        user_uuid,
         finished;
 
 PRAGMA analysis_limit=1000;
