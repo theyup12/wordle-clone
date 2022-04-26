@@ -43,7 +43,6 @@ class UserStats(BaseModel):
 
 
 def get_db():
-    # db_list = [settings.stats_database_s1, settings.stats_database_s2, settings.stats_database_s3, settings.user_database]
     with contextlib.closing(sqlite3.connect(settings.user_database)) as db:
         db.row_factory = sqlite3.Row
         yield db
@@ -165,23 +164,53 @@ def game_stats(db: sqlite3.Connection = Depends(get_db)):
     db.execute("ATTACH './var/stats_s1.db' as stats_s1")
     db.execute("ATTACH './var/stats_s2.db' as stats_s2")
     db.execute("ATTACH './var/stats_s3.db' as stats_s3")
-    top_users_s1 = db.execute("""SELECT * FROM wins INNER JOIN users ON users.user_id = wins.user_id LIMIT 10; """)
-    return{"Top 10 Users": top_users_s1.fetchall()}
+    top_users_s1 = db.execute("""
+    SELECT username, count_wins 
+    FROM stats_s1.wins 
+    INNER JOIN users ON users.user_uuid = stats_s1.wins.user_uuid LIMIT 10; 
+    """)
+    res = top_users_s1.fetchall()
+    top_users_s2 = db.execute("""
+    SELECT username, count_wins 
+    FROM stats_s2.wins 
+    INNER JOIN users ON users.user_uuid = stats_s2.wins.user_uuid LIMIT 10; 
+    """)
+    res += top_users_s2.fetchall()
+    top_users_s3 = db.execute("""
+    SELECT username, count_wins 
+    FROM stats_s3.wins 
+    INNER JOIN users ON users.user_uuid = stats_s3.wins.user_uuid LIMIT 10; 
+    """)
+    res += top_users_s3.fetchall()
+    res = sorted(res, key=lambda x: x[1], reverse=True)[:10]
+    return{"Top 10 Users": res}
 
-#
-# @app.get("/top-streaks-users")
-# def game_stats(db: sqlite3.Connection = Depends(get_db)):
-#     top_users = db.execute(
-#         """
-#         SELECT
-#             *
-#         FROM
-#             streaks
-#         INNER JOIN users ON users.user_id = streaks.user_id
-#         ORDER BY
-#             streak DESC
-#         LIMIT 10;
-#         """
-#     )
-#     return {"Top 10 Users": top_users.fetchall()}
-#
+
+@app.get("/top-streaks-users")
+def game_stats(db: sqlite3.Connection = Depends(get_db)):
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    db.execute("ATTACH './var/stats_s1.db' as stats_s1")
+    db.execute("ATTACH './var/stats_s2.db' as stats_s2")
+    db.execute("ATTACH './var/stats_s3.db' as stats_s3")
+    top_users_s1 = db.execute(
+        """SELECT streak, beginning, ending FROM stats_s1.streaks
+        INNER JOIN users ON users.user_uuid = stats_S1.streaks.user_uuid
+        ORDER BY streak DESC LIMIT 10;
+        """)
+    res = top_users_s1.fetchall()
+    top_users_s2 = db.execute(
+        """SELECT streak, beginning, ending FROM stats_s2.streaks
+        INNER JOIN users ON users.user_uuid = stats_S2.streaks.user_uuid
+        ORDER BY streak DESC LIMIT 10;
+        """)
+    res += top_users_s2.fetchall()
+    top_users_s3 = db.execute(
+        """SELECT streak, beginning, ending FROM stats_s3.streaks
+        INNER JOIN users ON users.user_uuid = stats_S3.streaks.user_uuid
+        ORDER BY streak DESC LIMIT 10;
+        """)
+    res += top_users_s3.fetchall()
+    res = sorted(res, key=lambda x: x[1], reverse=True)[:10]
+    return {"Top 10 Users": res}
+

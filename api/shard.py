@@ -6,7 +6,7 @@ DATABASE_s1 = './var/stats_s1.db'
 DATABASE_s2 = './var/stats_s2.db'
 DATABASE_s3 = './var/stats_s3.db'
 DATABASE_user = './var/user.db'
-SCHEMA = './share/track/shard.sql'
+SCHEMA = './share/shard.sql'
 
 NUM_USERS = 100_000
 record_s1 = []
