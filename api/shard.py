@@ -15,7 +15,7 @@ record_s3 = []
 record_user = []
 
 with contextlib.closing(sqlite3.connect(DATABASE)) as db:
-    for row in db.execute("SELECT * FROM games LIMIT 20;"):
+    for row in db.execute("SELECT * FROM games"):
         if row[0] % 3 == 0:
             record_s1.append(row)
         elif row[0] % 3 == 1:
@@ -44,24 +44,21 @@ for row in record_user:
 conn.commit()
 
 # game = VALUES(user_id, game_id,'2022-03-03', guesses = 4, won = 0)
+i = 0
 with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
     with open(SCHEMA) as f:
         db.executescript(f.read())
-
     db.execute("ATTACH './var/user.db' as Users")
     for row in record_s1:
-        while True:
-            try:
-                cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
-                uid = cur.fetchone()[0]
-                data = (uid, row[0], row[1], row[2], row[3], row[4])
-                db.execute("""
-                            INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
-                            VALUES(?, ?, ?, ?, ?, ?)
-                            """, data)
-            except sqlite3.IntegrityError:
-                continue
-            break
+        cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
+        uid = cur.fetchone()[0]
+        data = (uid, row[0], row[1], row[2], row[3], row[4])
+        db.execute("""
+                    INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
+                    VALUES(?, ?, ?, ?, ?, ?)
+                    """, data)
+        i = i + 1
+        print(i)
     db.commit()
 
 with contextlib.closing(sqlite3.connect(DATABASE_s2)) as db:
@@ -70,18 +67,15 @@ with contextlib.closing(sqlite3.connect(DATABASE_s2)) as db:
 
     db.execute("ATTACH './var/user.db' as Users")
     for row in record_s2:
-        while True:
-            try:
-                cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
-                uid = cur.fetchone()[0]
-                data = (uid, row[0], row[1], row[2], row[3], row[4])
-                db.execute("""
-                            INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
-                            VALUES(?, ?, ?, ?, ?, ?)
-                            """, data)
-            except sqlite3.IntegrityError:
-                continue
-            break
+        cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
+        uid = cur.fetchone()[0]
+        data = (uid, row[0], row[1], row[2], row[3], row[4])
+        db.execute("""
+                    INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
+                    VALUES(?, ?, ?, ?, ?, ?)
+                    """, data)
+        i = i + 1
+        print(i)
     db.commit()
 
 with contextlib.closing(sqlite3.connect(DATABASE_s3)) as db:
@@ -90,16 +84,13 @@ with contextlib.closing(sqlite3.connect(DATABASE_s3)) as db:
 
     db.execute("ATTACH './var/user.db' as Users")
     for row in record_s3:
-        while True:
-            try:
-                cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
-                uid = cur.fetchone()[0]
-                data = (uid, row[0], row[1], row[2], row[3], row[4])
-                db.execute("""
-                            INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
-                            VALUES(?, ?, ?, ?, ?, ?)
-                            """, data)
-            except sqlite3.IntegrityError:
-                continue
-            break
+        cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
+        uid = cur.fetchone()[0]
+        data = (uid, row[0], row[1], row[2], row[3], row[4])
+        db.execute("""
+                    INSERT INTO games(user_uuid, user_id, game_id, finished, guesses, won)
+                    VALUES(?, ?, ?, ?, ?, ?)
+                    """, data)
+        i = i + 1
+        print(i)
     db.commit()

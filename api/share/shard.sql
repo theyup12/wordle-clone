@@ -11,7 +11,7 @@ CREATE TABLE games(
     finished DATE DEFAULT CURRENT_TIMESTAMP,
     guesses INTEGER,
     won BOOLEAN,
-    PRIMARY KEY(game_id)
+    PRIMARY KEY(user_uuid, game_id)
 );
 
 CREATE INDEX games_won_idx ON games(won);
