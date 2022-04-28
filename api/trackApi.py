@@ -1,7 +1,7 @@
 import logging.config
 import sqlite3
 import contextlib
-from fastapi import FastAPI, Depends, Response, HTTPException, status
+from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
 from pydantic import BaseModel, BaseSettings
 import uuid
 from datetime import datetime
@@ -54,7 +54,13 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI()
+app = FastAPI(root_path="/api/v3")
+
+
+@app.get("/app")
+def read_main(request: Request):
+    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
+
 logging.config.fileConfig(settings.logging_config)
 # getting all the word from the word_list database and display
 

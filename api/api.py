@@ -1,7 +1,7 @@
 import logging.config
 import sqlite3
 import contextlib
-from fastapi import FastAPI, Depends, Response, HTTPException, status
+from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
 from pydantic import BaseModel, BaseSettings
 
 # connect database setting from .env file
@@ -35,9 +35,21 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI()
+app = FastAPI(
+    servers=[
+        {"url": "/api/v2", "description": "Production environment"},
+        {"url": "/api/v3", "description": "Production environment"}
+    ],
+    root_path="/api/v1"
+    # root_path_in_servers=False
+
+)
 logging.config.fileConfig(settings.logging_config)
 # getting all the word from the word_list database and display
+
+@app.get("/app")
+def read_main(request: Request):
+    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
 
 
 @app.get("/list-words/")
