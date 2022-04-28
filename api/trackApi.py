@@ -194,19 +194,19 @@ def game_stats(db: sqlite3.Connection = Depends(get_db)):
     db.execute("ATTACH './var/stats_s2.db' as stats_s2")
     db.execute("ATTACH './var/stats_s3.db' as stats_s3")
     top_users_s1 = db.execute(
-        """SELECT streak, beginning, ending FROM stats_s1.streaks
+        """SELECT username, streak, beginning, ending FROM stats_s1.streaks
         INNER JOIN users ON users.user_uuid = stats_S1.streaks.user_uuid
         ORDER BY streak DESC LIMIT 10;
         """)
     res = top_users_s1.fetchall()
     top_users_s2 = db.execute(
-        """SELECT streak, beginning, ending FROM stats_s2.streaks
+        """SELECT username, streak, beginning, ending FROM stats_s2.streaks
         INNER JOIN users ON users.user_uuid = stats_S2.streaks.user_uuid
         ORDER BY streak DESC LIMIT 10;
         """)
     res += top_users_s2.fetchall()
     top_users_s3 = db.execute(
-        """SELECT streak, beginning, ending FROM stats_s3.streaks
+        """SELECT username, streak, beginning, ending FROM stats_s3.streaks
         INNER JOIN users ON users.user_uuid = stats_S3.streaks.user_uuid
         ORDER BY streak DESC LIMIT 10;
         """)
