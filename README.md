@@ -1,5 +1,5 @@
 # wordle-api
-# CPSC 449 - Project 2: Microservice
+# CPSC 449 - Project 3: Microservice
 
 Team Members: 
 
@@ -37,5 +37,6 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie
     ### To initialize the database, type:
         ./bin/init_s1.sh
         ./bin/init_s2.sh
+        python3 shard.py
     ### To start the gunicorn servers, type:
         foreman start
