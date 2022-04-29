@@ -35,6 +35,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie
     
 3. Then run the command:
     ### To initialize the database, type:
+        cd into the api folder directory wordle-project3/api
         ./bin/init_s1.sh
         ./bin/init_s2.sh
         python3 shard.py
