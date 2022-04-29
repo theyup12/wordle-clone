@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sqlite3 ./var/word_list.db < ./share/word_list.sql
+sqlite3 ./var/word_list.db < ./share/answers/word_list.sql

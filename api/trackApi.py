@@ -54,7 +54,11 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI(root_path="/api/v3")
+app = FastAPI(root_path="/api/v3",
+servers=[
+        {"url": "api/v1/", "description": "Staging environment"},
+        {"url": "api/v2", "description": "Production environment"},
+    ],)
 
 
 @app.get("/app")

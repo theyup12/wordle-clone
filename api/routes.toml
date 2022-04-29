@@ -16,11 +16,11 @@
 
     [http.services.app]
       [http.services.app.loadBalancer]
-        [[http.services.app.loadBalancer.servers]]
+      [[http.services.app.loadBalancer.servers]]
           url = ["http://127.0.0.1:5000/"]
         [[http.services.app.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5001/"]        
+          url = ["http://127.0.0.1:5100/"]        
         [[http.services.app.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5002/"]  
+          url = ["http://127.0.0.1:5200/"]  
         
                   
