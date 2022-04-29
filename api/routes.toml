@@ -2,25 +2,45 @@
   [http.middlewares]
 
     [http.middlewares.api-stripprefix.stripPrefix]
-      prefixes = ["/api/v1", "/api/v2", "/api/v3"]
+      prefixes = ["/api/v1", "/answers/v2", "/track/v3"]
 
   [http.routers]
 
     [http.routers.app-http]
       entryPoints = ["http"]
       service = "app"
-      rule = "PathPrefix(`/api/v1`, `/api/v2`, `/api/v3`)"
+      rule = "PathPrefix(`/api/v1`)"
+      middlewares = ["api-stripprefix"]
+
+    [http.routers.app1-http1]
+      entryPoints = ["http"]
+      service = "app1"
+      rule = "PathPrefix(`/answers/v2`)"
+      middlewares = ["api-stripprefix"]
+
+    [http.routers.app2-http2]
+      entryPoints = ["http"]
+      service = "app2"
+      rule = "PathPrefix(`/track/v3`)"
       middlewares = ["api-stripprefix"]
 
   [http.services]
 
     [http.services.app]
-      [http.services.app.loadBalancer]
       [[http.services.app.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5000/"]
-        [[http.services.app.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5100/"]        
-        [[http.services.app.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5200/"]  
+        url = ["http://127.0.0.1:5000/"]
+
+    [http.services.app1]
+      [[http.services.app1.loadBalancer.servers]]
+        url = ["http://127.0.0.1:5100/"]
+
+    [http.services.app2]
+      [http.services.app2.loadBalancer]
+        [[http.services.app2.loadBalancer.servers]]
+          url = ["http://127.0.0.1:5200/"]
+        [[http.services.app2.loadBalancer.servers]]
+          url = ["http://127.0.0.1:5201/"]
+        [[http.services.app2.loadBalancer.servers]]
+          url = ["http://127.0.0.1:5202/"]
         
                   

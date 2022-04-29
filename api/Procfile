@@ -1,3 +1,3 @@
-api: uvicorn --port 5000 api:app --reload
-answersApi: uvicorn --port 5100 answersApi:app   --reload
-trackApi: uvicorn --port 5200 trackApi:app --reload --workers 3
+api: uvicorn --port $PORT api:app --reload --root-path /api/v1
+answers: uvicorn --port $PORT answersApi:app --reload --root-path /answers/v2
+track: uvicorn --port $PORT trackApi:app --reload --root-path /track/v3

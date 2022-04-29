@@ -54,11 +54,11 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI(root_path="/api/v3",
-servers=[
-        {"url": "api/v1/", "description": "Staging environment"},
-        {"url": "api/v2", "description": "Production environment"},
-    ],)
+app = FastAPI(
+    servers=[{"url": "http://127.0.0.1:9999/api/v1/docs", "description": "dictionary"},
+    {"url": "http://127.0.0.1:9999/answers/v2", "description": "guesses"},
+    {"url": "http://127.0.0.1:9999/track/v3", "description": "track stats"}]
+)
 
 
 @app.get("/app")

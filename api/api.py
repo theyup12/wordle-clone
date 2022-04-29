@@ -35,11 +35,7 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI(root_path="/api/v1",
-servers=[
-        {"url": "api/v2", "description": "Staging environment"},
-        {"url": "api/v3", "description": "Production environment"},
-    ],)
+app = FastAPI()
 logging.config.fileConfig(settings.logging_config)
 # getting all the word from the word_list database and display
 
