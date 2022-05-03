@@ -1,6 +1,7 @@
 import logging.config
 import sqlite3
 import contextlib
+import redis
 from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
 from pydantic import BaseModel, BaseSettings
 import uuid
@@ -54,11 +55,10 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI(
-    servers=[{"url": "http://127.0.0.1:9999/api/v1/docs", "description": "dictionary"},
-    {"url": "http://127.0.0.1:9999/answers/v2", "description": "guesses"},
-    {"url": "http://127.0.0.1:9999/track/v3", "description": "track stats"}]
-)
+app = FastAPI()
+    # servers=[{"url": "http://127.0.0.1:9999/api/v1/docs", "description": "dictionary"},
+    # {"url": "http://127.0.0.1:9999/answers/v2", "description": "guesses"},
+    # {"url": "http://127.0.0.1:9999/track/v3", "description": "track stats"}]
 
 
 @app.get("/app")
@@ -168,59 +168,21 @@ def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = De
 
 
 @app.get("/top-wins-users/")
-def game_stats(db: sqlite3.Connection = Depends(get_db)):
-    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
-    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
-    db.execute("ATTACH './var/stats_s1.db' as stats_s1")
-    db.execute("ATTACH './var/stats_s2.db' as stats_s2")
-    db.execute("ATTACH './var/stats_s3.db' as stats_s3")
-    top_users_s1 = db.execute("""
-    SELECT username, count_wins 
-    FROM stats_s1.wins 
-    INNER JOIN users ON users.user_uuid = stats_s1.wins.user_uuid LIMIT 10; 
-    """)
-    res = top_users_s1.fetchall()
-    top_users_s2 = db.execute("""
-    SELECT username, count_wins 
-    FROM stats_s2.wins 
-    INNER JOIN users ON users.user_uuid = stats_s2.wins.user_uuid LIMIT 10; 
-    """)
-    res += top_users_s2.fetchall()
-    top_users_s3 = db.execute("""
-    SELECT username, count_wins 
-    FROM stats_s3.wins 
-    INNER JOIN users ON users.user_uuid = stats_s3.wins.user_uuid LIMIT 10; 
-    """)
-    res += top_users_s3.fetchall()
-    res = sorted(res, key=lambda x: x[1], reverse=True)[:10]
-    return{"Top 10 Users": res}
+def win_stats(db: sqlite3.Connection = Depends(get_db)):
+    db = redis.Redis(host="localhost", port=6379)
+    curr = db.zrevrange("Top-wins", 0, 9, withscores=True)
+    res = []
+    for user in curr:
+        res.append({'username': user[0], 'wins': user[1]})
+    return {"Top-10 Users": res}
 
 
 @app.get("/top-streaks-users")
-def game_stats(db: sqlite3.Connection = Depends(get_db)):
-    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
-    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
-    db.execute("ATTACH './var/stats_s1.db' as stats_s1")
-    db.execute("ATTACH './var/stats_s2.db' as stats_s2")
-    db.execute("ATTACH './var/stats_s3.db' as stats_s3")
-    top_users_s1 = db.execute(
-        """SELECT username, streak, beginning, ending FROM stats_s1.streaks
-        INNER JOIN users ON users.user_uuid = stats_S1.streaks.user_uuid
-        ORDER BY streak DESC LIMIT 10;
-        """)
-    res = top_users_s1.fetchall()
-    top_users_s2 = db.execute(
-        """SELECT username, streak, beginning, ending FROM stats_s2.streaks
-        INNER JOIN users ON users.user_uuid = stats_S2.streaks.user_uuid
-        ORDER BY streak DESC LIMIT 10;
-        """)
-    res += top_users_s2.fetchall()
-    top_users_s3 = db.execute(
-        """SELECT username, streak, beginning, ending FROM stats_s3.streaks
-        INNER JOIN users ON users.user_uuid = stats_S3.streaks.user_uuid
-        ORDER BY streak DESC LIMIT 10;
-        """)
-    res += top_users_s3.fetchall()
-    res = sorted(res, key=lambda x: x[1], reverse=True)[:10]
-    return {"Top 10 Users": res}
+def streak_stats(db: sqlite3.Connection = Depends(get_db)):
+    db = redis.Redis(host="localhost", port=6379)
+    curr = db.zrevrange("Top-streaks", 0, 9, withscores=True)
+    res = []
+    for user in curr:
+        res.append({'username': user[0], 'streaks': user[1]})
+    return {"Top-10 Users": res}
 
