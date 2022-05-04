@@ -13,14 +13,8 @@ DATABASE_user = '../var/user.db'
 cli = redis.Redis(host="localhost", port=6379)
 
 # crontab -e
-# */10 * * * * /usr/bin/python3 /home/student/wordle-project3/api/bin/materialize.py > test.log
-# * * * * * cd /home/student/wordle-project3/api/bin/ && /usr/bin/python3 materialize.py >> check.log
+# */10 * * * * cd /home/student/wordle-project3/api/bin/ && /usr/bin/python3 materialize.py >> check.log
 # crontab -l
-#with CronTab(user=True) as cron:
-#     fpath = Path('materialize.py').absolute()
-#     job = cron.new(command=f'python3 {fpath} >> test.log')
-#     job.minute.every(10)
-    #cron.remove_all()
 print("executed")
 # get views from the game table and convert into redis database
 

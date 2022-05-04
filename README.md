@@ -1,5 +1,5 @@
 # wordle-api
-# CPSC 449 - Project 3: Microservice
+# CPSC 449 - Project 4: Microservice
 
 Team Members:
 
@@ -14,7 +14,7 @@ This project also implements traefik as a reverse-proxy and uses foreman to crea
 
 ## Project Requirements
 This project will run using Tuffix 2020 using Python 3.8.10 and will be implemented using fastapi and sqlite3.
-require user install fastapi, ruby-foreman, sqlite3, and httpie, faker, 
+require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 
 ## Run the Program
 1. install pip package installer and other tools:
@@ -24,7 +24,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 2. Install FastAPI:
     python3 -m pip install 'fastapi[all]'
 
-3. Then run the command:
+3. Project 3 => Then run the command:
     ### To initialize the database, type:
         cd into the api folder directory wordle-project3/api
         ./bin/init_s1.sh
@@ -34,6 +34,18 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
         foreman start -m api=1,answersApi=1,trackApi=3
     ### To start the Traefik files type:
         ./traefik --configFile=traefik.toml
+
+4. Project 4 => Run the command:
+      cd into the wordle-clone/api/bin
+  ### Get sql data and transport to redis:
+      python3 materialize.py
+  ### crontab initialization for every 10 minutes:
+      crontab -e
+  ### copy this into the terminal:
+      */10 * * * * cd /home/student/wordle-project3/api/bin/ && /usr/bin/python3 materialize.py >> check.log
+  ### This will show the above command is working:
+      crontab -l
+
 
 api: uvicorn --port $PORT api:app --reload --root-path /api/v1
 answers: uvicorn --port $PORT answersApi:app --reload --root-path /answers/v2

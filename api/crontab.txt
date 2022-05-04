@@ -1,0 +1,3 @@
+crontab -e
+*/10 * * * * cd /home/student/wordle-project3/api/bin/ && /usr/bin/python3 materialize.py >> check.log
+crontab -l
