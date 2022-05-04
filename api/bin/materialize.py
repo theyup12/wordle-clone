@@ -10,8 +10,6 @@ DATABASE_s2 = '../var/stats_s2.db'
 DATABASE_s3 = '../var/stats_s3.db'
 DATABASE_user = '../var/user.db'
 
-cli = redis.Redis(host="localhost", port=6379)
-
 # crontab -e
 # */10 * * * * cd /home/student/wordle-project3/api/bin/ && /usr/bin/python3 materialize.py >> check.log
 # crontab -l
@@ -48,13 +46,14 @@ for table in tables:
         ORDER BY {table[1]} DESC LIMIT 10;
         """)
         res += top_users_s3.fetchall()
+        cli = redis.Redis(host="localhost", port=6379)
         with cli.pipeline() as pipe:
             pipe.multi()
             cur_key = f"Top-{table[0]}"
             for user in res:
                 cli.zadd(cur_key, {user[0]: user[1]})
             pipe.execute()
-    pipe.close()
+        pipe.close()
 
 print("finished")
 print(cli.zrevrange("Top-wins", 0, -1, withscores=True))
