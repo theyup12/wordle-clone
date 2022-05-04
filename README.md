@@ -17,14 +17,14 @@ This project will run using Tuffix 2020 using Python 3.8.10 and will be implemen
 require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 
 ## Run the Program
-1. install pip package installer and other tools:
+### 1. install pip package installer and other tools:
     sudo apt update
-    sudo apt install --yes python3-pip ruby-foreman httpie sqlite3
+    sudo apt install --yes python3-pip ruby-foreman httpie sqlite3 redis python3-hiredis
 
-2. Install FastAPI:
+### 2. Install FastAPI:
     python3 -m pip install 'fastapi[all]'
 
-3. Project 3 => Then run the command:
+### 3. Project 3 => Then run the command:
     ### To initialize the database, type:
         cd into the api folder directory wordle-project3/api
         ./bin/init_s1.sh
@@ -35,7 +35,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
     ### To start the Traefik files type:
         ./traefik --configFile=traefik.toml
 
-4. Project 4 => Run the command:
+### 4. Project 4 => Run the command:
       cd into the wordle-clone/api/bin
   ### Get sql data and transport to redis:
       python3 materialize.py
