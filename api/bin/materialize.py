@@ -48,9 +48,14 @@ for table in tables:
         ORDER BY {table[1]} DESC LIMIT 10;
         """)
         res += top_users_s3.fetchall()
-        cur_key = f"Top-{table[0]}"
-        for user in res:
-            cli.zadd(cur_key, {user[0]: user[1]})
+        with cli.pipeline() as pipe:
+            pipe.multi()
+            cur_key = f"Top-{table[0]}"
+            for user in res:
+                cli.zadd(cur_key, {user[0]: user[1]})
+            pipe.execute()
+    pipe.close()
+
 print("finished")
 print(cli.zrevrange("Top-wins", 0, -1, withscores=True))
 print(" ")
