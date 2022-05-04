@@ -39,11 +39,6 @@ app = FastAPI()
 logging.config.fileConfig(settings.logging_config)
 # getting all the word from the word_list database and display
 
-@app.get("/app")
-def read_main(request: Request):
-    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
-
-
 @app.get("/list-words/")
 def list_words(db: sqlite3.Connection = Depends(get_db)):
     words = db.execute("SELECT * FROM words")

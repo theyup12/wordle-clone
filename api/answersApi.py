@@ -32,7 +32,7 @@ def get_logger():
 
 
 settings = Settings()
-app = FastAPI(root_path="/api/v2")
+app = FastAPI()
 logging.config.fileConfig(settings.logging_config)
 # get the list of words from the answers.db(from wordle script)
 
