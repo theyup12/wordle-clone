@@ -42,7 +42,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
   ### crontab initialization for every 10 minutes:
       crontab -e
   ### copy this into the terminal:
-      */10 * * * * cd /home/student/wordle-project3/api/bin/ && /usr/bin/python3 materialize.py >> check.log
+      */10 * * * * cd /home/student/wordle-clone/api/bin/ && /usr/bin/python3 materialize.py >> check.log
   ### This will show the above command is working:
       crontab -l
 
