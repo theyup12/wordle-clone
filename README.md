@@ -24,7 +24,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 ### 2. Install FastAPI:
     python3 -m pip install 'fastapi[all]'
 
-### 3. Project 3 => Then run the command:
+### 3. Project 4 => Then run the command:
     ### To initialize the database, type:
         cd into the api folder directory wordle-project3/api
         ./bin/init_s1.sh
