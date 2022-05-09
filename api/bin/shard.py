@@ -1,12 +1,12 @@
 import contextlib
 import sqlite3
 import uuid
-DATABASE = './var/stats.db'
-DATABASE_s1 = './var/stats_s1.db'
-DATABASE_s2 = './var/stats_s2.db'
-DATABASE_s3 = './var/stats_s3.db'
-DATABASE_user = './var/user.db'
-SCHEMA = './share/shard.sql'
+DATABASE = '../var/stats.db'
+DATABASE_s1 = '../var/stats_s1.db'
+DATABASE_s2 = '../var/stats_s2.db'
+DATABASE_s3 = '../var/stats_s3.db'
+DATABASE_user = '../var/user.db'
+SCHEMA = '../share/shard.sql'
 
 NUM_USERS = 100_000
 record_s1 = []
@@ -48,7 +48,7 @@ i = 0
 with contextlib.closing(sqlite3.connect(DATABASE_s1)) as db:
     with open(SCHEMA) as f:
         db.executescript(f.read())
-    db.execute("ATTACH './var/user.db' as Users")
+    db.execute("ATTACH '../var/user.db' as Users")
     for row in record_s1:
         cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
         uid = cur.fetchone()[0]
@@ -65,7 +65,7 @@ with contextlib.closing(sqlite3.connect(DATABASE_s2)) as db:
     with open(SCHEMA) as f:
         db.executescript(f.read())
 
-    db.execute("ATTACH './var/user.db' as Users")
+    db.execute("ATTACH '../var/user.db' as Users")
     for row in record_s2:
         cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
         uid = cur.fetchone()[0]
@@ -82,7 +82,7 @@ with contextlib.closing(sqlite3.connect(DATABASE_s3)) as db:
     with open(SCHEMA) as f:
         db.executescript(f.read())
 
-    db.execute("ATTACH './var/user.db' as Users")
+    db.execute("ATTACH '../var/user.db' as Users")
     for row in record_s3:
         cur = db.execute("SELECT user_uuid FROM Users.users WHERE Users.users.user_id = ?", [row[0]])
         uid = cur.fetchone()[0]

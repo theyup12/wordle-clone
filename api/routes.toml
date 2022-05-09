@@ -24,11 +24,11 @@
       rule = "PathPrefix(`/track/v3`)"
       middlewares = ["api-stripprefix"]
 
-#    [http.routers.app3-http3]
-#      entryPoints = ["http"]
-#      service = "app3"
-#      rule = "PathPrefix(`/state/v4`)"
-#      middlewares = ["api-stripprefix"]
+    [http.routers.app3-http3]
+      entryPoints = ["http"]
+      service = "app3"
+      rule = "PathPrefix(`/state/v4`)"
+      middlewares = ["api-stripprefix"]
 
   [http.services]
 
@@ -41,15 +41,10 @@
         url = ["http://127.0.0.1:5100/"]
 
     [http.services.app2]
-      [http.services.app2.loadBalancer]
-        [[http.services.app2.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5200/"]
-        [[http.services.app2.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5201/"]
-        [[http.services.app2.loadBalancer.servers]]
-          url = ["http://127.0.0.1:5202/"]
+      [[http.services.app2.loadBalancer.servers]]
+        url = ["http://127.0.0.1:5200/"]
 
-#    [http.services.app3]
-#      [[http.services.app3.loadBalancer.servers]]
-#        url = ["http://127.0.0.1:5300/"]
+    [http.services.app3]
+      [[http.services.app3.loadBalancer.servers]]
+        url = ["http://127.0.0.1:5300/"]
                   
