@@ -29,7 +29,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
         cd into the api folder directory wordle-project3/api
         ./bin/init_s1.sh
         ./bin/init_s2.sh
-        python3 shard.py
+        python3 shard.py in bin file
     ### To start the uvicorn servers, type:
         foreman start -m api=1,answersApi=1,trackApi=3
     ### To start the Traefik files type:
