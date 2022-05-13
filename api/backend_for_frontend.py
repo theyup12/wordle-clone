@@ -4,7 +4,7 @@
 
 import json
 import httpx
-import uuid
+from uuid import UUID
 from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
 from datetime import datetime
 app = FastAPI()
@@ -14,7 +14,10 @@ app = FastAPI()
 def new_game(username: str):
     with httpx.Client() as client:
         params = {"username": username}
+        # try:
         r = client.get('http://127.0.0.1:5200/user-data', params=params)
+        # except httpx.RequestError as exc:
+        #     raise f"An error occurred while requesting{exc.request.url}"
         curr = {"status": "new"}
         curr.update(dict(r.json()))
         d = datetime.now()
@@ -22,16 +25,22 @@ def new_game(username: str):
         curr["game_id"] = int(time)
         params = {"user_id": curr.get("user_uuid"), "game_id": curr.get("game_id")}
         r = client.post('http://127.0.0.1:5300/start-new-game', params=params)
-        curr["status"] = "In-progress"
-        curr.update(dict(r.json()))
-        counter = int(curr.pop("counter"))
-        curr["remain"] = 6 - counter
-        params = {"answer_guess": curr.get("list")[counter - 1]}
-        r = client.get('http://127.0.0.1:5100/validate-answer', params=params)
-        curr.update(dict(r.json()))
+        if r.status_code != httpx.codes.CREATED:
+            return r.raise_for_status()
+        data = dict(r.json())
+        if int(data["counter"]) > 0:
+            curr["status"] = "In-progress"
+            curr.update(data)
+            counter = int(curr.pop("counter"))
+            curr["remain"] = 6 - counter
+            params = {"answer_guess": curr.get("list")[counter - 1]}
+            r = client.get('http://127.0.0.1:5100/validate-answer', params=params)
+            if r.status_code != httpx.codes.OK:
+                return r.raise_for_status()
+            curr.update(dict(r.json()))
     return curr
 
 
-# @app.post("/game/{game_id}")
-# def create_game(user_id: uuid, guess: str):
-#     return {"status": "empty"}
+@app.post("/game/{game_id}")
+def create_game(game_id: int, user_id: UUID, guess: str):
+    return {"status": "empty"}
