@@ -22,7 +22,14 @@ def new_game(username: str):
         curr["game_id"] = int(time)
         params = {"user_id": curr.get("user_uuid"), "game_id": curr.get("game_id")}
         r = client.post('http://127.0.0.1:5300/start-new-game', params=params)
-    return r.json()
+        curr["status"] = "In-progress"
+        curr.update(dict(r.json()))
+        counter = int(curr.pop("counter"))
+        curr["remain"] = 6 - counter
+        params = {"answer_guess": curr.get("list")[counter - 1]}
+        r = client.get('http://127.0.0.1:5100/validate-answer', params=params)
+        curr.update(dict(r.json()))
+    return curr
 
 
 # @app.post("/game/{game_id}")

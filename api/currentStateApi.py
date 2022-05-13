@@ -74,7 +74,7 @@ def start_game(user_id: UUID, game_id: int, response: Response):
 
     cur = db.lrange(guess_list, 0, -1)
     cur_count = db.get(count)
-    return {"current_id": cur_id, "list": cur, "counter": cur_count}
+    return {"list": cur, "counter": cur_count}
 
 
 @app.put("/update-game/{current_game}")

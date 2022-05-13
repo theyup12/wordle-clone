@@ -37,11 +37,6 @@ logging.config.fileConfig(settings.logging_config)
 # get the list of words from the answers.db(from wordle script)
 
 
-@app.get("/app")
-def read_main(request: Request):
-    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
-
-
 @app.get("/answers/")
 def list_answers(db: sqlite3.Connection = Depends(get_db)):
     answers = db.execute("SELECT * FROM answers")
@@ -49,10 +44,10 @@ def list_answers(db: sqlite3.Connection = Depends(get_db)):
 # colors to check if the letter in the right spot or not
 
 
-class Color(Enum):
-    Correct = "Green"
-    WrongSpot = "Yellow"
-    Wrong = 'Gray'
+# class Color(Enum):
+#     Correct = "Green"
+#     WrongSpot = "Yellow"
+#     Wrong = 'Gray'
 # counting numbers for game
 
 
@@ -60,28 +55,28 @@ game = 1
 # check if the answer valid and if all color green then move on and go the next game.
 
 
-@app.get("/validate-answer/{answer_guess}")
+@app.get("/validate-answer")
 def validate_guess(answer_guess: str, response: Response, db: sqlite3.Connection = Depends(get_db)):
     global game
     cur = db.execute("SELECT words FROM answers WHERE id = ? LIMIT 1", [game])
     correct_answer = str(cur.fetchone()[0])
-    res = []
+    correct = []
+    present = []
     did_guess_correct = True
     # compare the guess word with answer
     for i, ch in enumerate(answer_guess):
         if ch == correct_answer[i]:
-            res.append(Color.Correct)
+            correct.append(ch)
         elif ch in correct_answer:
             did_guess_correct = False
-            res.append(Color.WrongSpot)
+            present.append(ch)
         else:
             did_guess_correct = False
-            res.append(Color.Wrong)
     # next game
     if did_guess_correct:
         game = game + 1
     # return array of color
-    return {"CompareAnswer": res}
+    return {"correct": correct, "present": present}
 # update the answer
 
 
