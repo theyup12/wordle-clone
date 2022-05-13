@@ -36,9 +36,11 @@ app = FastAPI()
 logging.config.fileConfig(settings.logging_config)
 # get the list of words from the answers.db(from wordle script)
 
+
 @app.get("/app")
 def read_main(request: Request):
     return {"message": "Hello World", "root_path": request.scope.get("root_path")}
+
 
 @app.get("/answers/")
 def list_answers(db: sqlite3.Connection = Depends(get_db)):

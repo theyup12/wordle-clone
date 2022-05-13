@@ -1,4 +1,5 @@
-api: uvicorn --port $PORT api:app --reload --root-path /api/v1
-answers: uvicorn --port $PORT answersApi:app --reload --root-path /answers/v2
-track: uvicorn --port $PORT trackApi:app --reload --root-path /track/v3
-state: uvicorn --port $PORT currentStateApi:app --reload --root-path /state/v4
+api: uvicorn --port $PORT api:app --reload
+answers: uvicorn --port $PORT answersApi:app --reload
+track: uvicorn --port $PORT trackApi:app --reload
+state: uvicorn --port $PORT currentStateApi:app --reload
+backend: uvicorn --port $PORT backend_for_frontend:app --reload

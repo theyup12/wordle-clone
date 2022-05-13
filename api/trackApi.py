@@ -3,7 +3,7 @@ import sqlite3
 import contextlib
 import redis
 from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel, BaseSettings, Field
 import uuid
 from datetime import datetime
 # connect database setting from .env file
@@ -56,14 +56,6 @@ def get_logger():
 
 settings = Settings()
 app = FastAPI()
-    # servers=[{"url": "http://127.0.0.1:9999/api/v1/docs", "description": "dictionary"},
-    # {"url": "http://127.0.0.1:9999/answers/v2", "description": "guesses"},
-    # {"url": "http://127.0.0.1:9999/track/v3", "description": "track stats"}]
-
-
-@app.get("/app")
-def read_main(request: Request):
-    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
 
 logging.config.fileConfig(settings.logging_config)
 # getting all the word from the word_list database and display
@@ -167,8 +159,24 @@ def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = De
     return {"game-statistics": stats}
 
 
+@app.get("/user-data")
+def search_user(username: str, db: sqlite3.Connection = Depends(get_db)):
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    try:
+        cur = db.execute("SELECT * FROM users WHERE username = ?", [username])
+    except sqlite3.IntegrityError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"type": type(error).__name__, "msg": str(error)}
+        )
+    curr = cur.fetchone()
+    info = {"user_uuid": uuid.UUID(bytes_le=curr[0]), "username": curr[2]}
+    return info
+
+
 @app.get("/top-wins-users/")
-def win_stats(db: sqlite3.Connection = Depends(get_db)):
+def win_stats():
     db = redis.Redis(host="localhost", port=6379)
     curr = db.zrevrange("Top-wins", 0, 9, withscores=True)
     res = []
@@ -178,7 +186,7 @@ def win_stats(db: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/top-streaks-users")
-def streak_stats(db: sqlite3.Connection = Depends(get_db)):
+def streak_stats():
     db = redis.Redis(host="localhost", port=6379)
     curr = db.zrevrange("Top-streaks", 0, 9, withscores=True)
     res = []
