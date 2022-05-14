@@ -17,7 +17,7 @@ def new_game(username: str):
         # try:
         r = client.get('http://127.0.0.1:5200/user-data', params=params)
         # except httpx.RequestError as exc:
-        #     raise f"An error occurred while requesting{exc.request.url}"
+        #     raise
         curr = {"status": "new"}
         curr.update(dict(r.json()))
         d = datetime.now()
@@ -41,6 +41,8 @@ def new_game(username: str):
     return curr
 
 
-@app.post("/game/{game_id}")
-def create_game(game_id: int, user_id: UUID, guess: str):
-    return {"status": "empty"}
+# @app.post("/game/{game_id}")
+# def create_game(game_id: int, user_id: UUID, guess: str):
+#     async with httpx.AsyncClient() as client:
+#         r = await client.get(f'http://127.0.0.1:5100/{game_id}')
+#     return {"status": "empty"}
