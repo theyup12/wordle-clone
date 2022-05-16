@@ -44,7 +44,7 @@ def list_words(db: sqlite3.Connection = Depends(get_db)):
 # check if the guess word is five-letters word
 
 
-@app.get("/validate-guess/{guess}")
+@app.get("/validate-guess")
 def validate_guess(guess: str, db: sqlite3.Connection = Depends(get_db)):
     cur = db.execute("SELECT word FROM words WHERE word = ?", [guess])
     curr = cur.fetchall()
@@ -84,7 +84,7 @@ def delete_guess(guess: str,  response: Response, db: sqlite3.Connection = Depen
     if exist:
         try:
             # delete the word from the database
-            delete_word = db.execute("""DELETE FROM words WHERE word = ?""", [guess])
+            db.execute("""DELETE FROM words WHERE word = ?""", [guess])
             db.commit()
         except sqlite3.IntegrityError as error:
             raise HTTPException(

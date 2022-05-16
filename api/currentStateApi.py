@@ -100,7 +100,7 @@ def update_game(user_id: UUID, game_id: int, guess_word: str):
     return {"current_id": cur_id, "list": cur, "counter": cur_count}
 
 
-@app.get("/get-state-game/")
+@app.get("/get-state-game")
 def get_state_game(user_id: UUID, game_id: int):
     delim: str = ":"
     cur_id = f"{user_id}{delim}{game_id}"
