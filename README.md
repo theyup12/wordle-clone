@@ -1,4 +1,4 @@
-# wordle-api
+# wordle-api(back-end)
 # CPSC 449 - Project 4: Microservice
 
 Team Members:
