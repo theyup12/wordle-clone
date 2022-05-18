@@ -78,9 +78,9 @@ def start_game(user_id: UUID, game_id: int, response: Response):
 
 
 @app.put("/update-game/{current_game}")
-def update_game(user_id: UUID, game_id: int, guess_word: str):
+def update_game(user_id: UUID, current_game: int, guess_word: str):
     delim: str = ":"
-    cur_id = f"{user_id}{delim}{game_id}"
+    cur_id = f"{user_id}{delim}{current_game}"
     guess_list = f"{cur_id}{delim}guessList"
     count = f"{cur_id}{delim}counter"
     if not db.exists(guess_list) or not db.exists(count):
@@ -112,4 +112,4 @@ def get_state_game(user_id: UUID, game_id: int):
         )
     cur = db.lrange(guess_list, 0, -1)
     cur_count = db.get(count)
-    return {"current_id": cur_id, "guess-list": cur, "guess-numbers": cur_count}
+    return {"current_id": cur_id, "guess-list": cur, "counter": cur_count}

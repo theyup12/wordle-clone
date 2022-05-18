@@ -33,7 +33,7 @@ def new_game(username: str):
             curr["status"] = "In-progress"
             curr.update(data)
             counter = int(curr.pop("counter"))
-            curr["remain"] = 6 - counter
+            curr["remaining"] = 6 - counter
             params = {"answer_guess": curr.get("list")[counter - 1]}
             r = client.get('http://127.0.0.1:5100/validate-answer', params=params)
             # if r.status_code != httpx.codes.OK:
@@ -42,25 +42,71 @@ def new_game(username: str):
     return curr
 
 
-async def verify_guess(guess: str, data: dict):
+# # m1 dict
+# async def verify_guess(guess: str, data: dict):
+#     async with httpx.AsyncClient() as client:
+#         params = {"guess": guess}
+#         r = await client.get('http://127.0.0.1:5000/validate-guess', params=params)
+#         data["status"] = r.status_code
+#
+#
+# # m4 current state
+# async def check_remaining(game_id: int, user_id: UUID, data: dict):
+#     async with httpx.AsyncClient() as client:
+#         params = {"user_id": user_id, "game_id": game_id}
+#         r = await client.get('http://127.0.0.1:5300/get-state-game', params=params)
+#         data.update(dict(r.json()))
+
+
+# m2 check answer
+async def verify_answer(guess: str, data: dict):
     async with httpx.AsyncClient() as client:
-        params = {"guess": guess}
-        r = await client.get('http://127.0.0.1:5000/validate-guess', params=params)
+        params = {"answer_guess": guess}
+        r = await client.get('http://127.0.0.1:5100/validate-answer', params=params)
         data.update(dict(r.json()))
 
 
-async def check_remaining(game_id: int, user_id: UUID, data: dict):
+# m4 update game record
+async def update_guess(current_game: int, user_id: UUID, guess: str, data: dict):
     async with httpx.AsyncClient() as client:
-        params = {"user_id": user_id, "game_id": game_id}
-        r = await client.get('http://127.0.0.1:5300/get-state-game', params=params)
-        data.update(dict(r.json()))
+        params = {"user_id": user_id, "guess_word": guess}
+        r = await client.put(f'http://127.0.0.1:5300/update-game/{current_game}', params=params)
+        curr = dict(r.json())
+        data["remaining"] = 6 - int(curr.get("counter"))
+
+# async def record_result()
 
 
 @app.post("/game/{game_id}")
-async def create_game(game_id: int, user_id: UUID, guess: str):
+async def running_game(game_id: int, user_id: UUID, guess: str):
     data: dict = {}
+    is_verify = False
+    # await asyncio.gather(
+    #     verify_guess(guess, data),
+    #     check_remaining(game_id, user_id, data)
+    # )
+    with httpx.Client() as client:
+        params = {"guess": guess}
+        r = client.get('http://127.0.0.1:5000/validate-guess', params=params)
+        if r.status_code == httpx.codes.OK:
+            is_verify = True
+        params = {"user_id": user_id, "game_id": game_id}
+        r = client.get('http://127.0.0.1:5300/get-state-game', params=params)
+        curr = dict(r.json())
+        data["remaining"] = 6 - int(curr.get("counter"))
+
+        if not is_verify or not data.get("remaining"):
+            data["Status"] = "invalid"
+            return data
     await asyncio.gather(
-        verify_guess(guess, data),
-        check_remaining(game_id, user_id, data)
+        update_guess(game_id, user_id, guess, data),
+        verify_answer(guess, data)
     )
+    data["Status"] = "incorrect"
+    curr = data.get("correct")
+    if len(curr) == 5:
+        data.update({"Status": "win"})
+
+    elif len(curr) < 5 and not data.get("remaining"):
+        data.update({"Status": "lose"})
     return data
