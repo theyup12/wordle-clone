@@ -22,7 +22,8 @@ def new_game(username: str):
         curr = {"status": "new"}
         curr.update(dict(r.json()))
         d = datetime.now()
-        time = f"{d.year}{d.month}{d.day}"
+        # time = f"{d.year}{d.month}{d.day}"
+        time = "2022507"
         curr["game_id"] = int(time)
         params = {"user_id": curr.get("user_uuid"), "game_id": curr.get("game_id")}
         r = client.post('http://127.0.0.1:5300/start-new-game', params=params)
@@ -74,17 +75,31 @@ async def update_guess(current_game: int, user_id: UUID, guess: str, data: dict)
         curr = dict(r.json())
         data["remaining"] = 6 - int(curr.get("counter"))
 
-# async def record_result()
+
+async def get_result(user_id: UUID, data: dict):
+    async with httpx.AsyncClient() as client:
+        d = datetime.now()
+        time = d.strftime("%Y-%m-%d")
+        params = {"user_uuid": user_id, "current_date": str(time)}
+        r = await client.get('http://127.0.0.1:5200/wordle-statistics', params=params)
+        data.update(dict(r.json()))
+
+
+async def record_result(user_id: UUID, current_game: int, result: int, curr: dict):
+    async with httpx.AsyncClient() as client:
+        d = datetime.now()
+        time = d.strftime("%Y%m%d")
+        guesses = 6 - curr.get("remaining")
+        curr_data = {"game_id": current_game, "finished": time, "guesses": guesses, "won": result}
+        params = {"user_uuid": user_id, "game": curr_data}
+        r = await client.post('http://127.0.0.1:5200/game-result', params=params, json=curr_data)
+        curr.update(dict(r.json()))
 
 
 @app.post("/game/{game_id}")
 async def running_game(game_id: int, user_id: UUID, guess: str):
     data: dict = {}
     is_verify = False
-    # await asyncio.gather(
-    #     verify_guess(guess, data),
-    #     check_remaining(game_id, user_id, data)
-    # )
     with httpx.Client() as client:
         params = {"guess": guess}
         r = client.get('http://127.0.0.1:5000/validate-guess', params=params)
@@ -106,7 +121,16 @@ async def running_game(game_id: int, user_id: UUID, guess: str):
     curr = data.get("correct")
     if len(curr) == 5:
         data.update({"Status": "win"})
-
+        await asyncio.gather(
+            record_result(user_id, game_id, 1, data),
+            get_result(user_id, data)
+        )
+        return data
     elif len(curr) < 5 and not data.get("remaining"):
         data.update({"Status": "lose"})
+        await asyncio.gather(
+            record_result(user_id, game_id, 0, data),
+            get_result(user_id, data)
+        )
+        return data
     return data
