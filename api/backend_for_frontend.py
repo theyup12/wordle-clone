@@ -3,66 +3,52 @@
 # api = 5000, answersApi = 5100, trackApi = 5200, currentStateApi = 5300
 
 import asyncio
-import json
 import httpx
 from uuid import UUID
-from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
+from fastapi import FastAPI, status
 from datetime import datetime
+import random
+import redis
 app = FastAPI()
+db = redis.Redis(host="localhost", port=6379)
 
 
 @app.post("/game/new", status_code=status.HTTP_201_CREATED)
 def new_game(username: str):
     with httpx.Client() as client:
+
         params = {"username": username}
-        # try:
         r = client.get('http://127.0.0.1:5200/user-data', params=params)
-        # except httpx.RequestError as exc:
-        #     raise
         curr = {"status": "new"}
         curr.update(dict(r.json()))
-        d = datetime.now()
-        # time = f"{d.year}{d.month}{d.day}"
-        time = "2022507"
-        curr["game_id"] = int(time)
-        params = {"user_id": curr.get("user_uuid"), "game_id": curr.get("game_id")}
-        r = client.post('http://127.0.0.1:5300/start-new-game', params=params)
-        # if r.status_code != httpx.codes.CREATED:
-        #     return r.raise_for_status()
-        data = dict(r.json())
+        exist = True
+        while exist:
+            game_id = random.randint(1, 2309)
+            curr["game_id"] = int(game_id)
+            params = {"user_id": curr.get("user_uuid"), "game_id": curr.get("game_id")}
+            r = client.post('http://127.0.0.1:5300/start-new-game', params=params)
+            if r.status_code == httpx.codes.CREATED:
+                data = dict(r.json())
+                exist = False
         if int(data["counter"]) > 0:
             curr["status"] = "In-progress"
             curr.update(data)
             counter = int(curr.pop("counter"))
             curr["remaining"] = 6 - counter
-            params = {"answer_guess": curr.get("list")[counter - 1]}
+            params = {"answer_guess": curr.get("list")[counter - 1], "game_id": curr.get("game_id")}
             r = client.get('http://127.0.0.1:5100/validate-answer', params=params)
             # if r.status_code != httpx.codes.OK:
             #     return r.raise_for_status()
             curr.update(dict(r.json()))
+        # if int(curr.get("remaining")) == 0:
+        #     return {"Status": "game finished"}
     return curr
 
 
-# # m1 dict
-# async def verify_guess(guess: str, data: dict):
-#     async with httpx.AsyncClient() as client:
-#         params = {"guess": guess}
-#         r = await client.get('http://127.0.0.1:5000/validate-guess', params=params)
-#         data["status"] = r.status_code
-#
-#
-# # m4 current state
-# async def check_remaining(game_id: int, user_id: UUID, data: dict):
-#     async with httpx.AsyncClient() as client:
-#         params = {"user_id": user_id, "game_id": game_id}
-#         r = await client.get('http://127.0.0.1:5300/get-state-game', params=params)
-#         data.update(dict(r.json()))
-
-
 # m2 check answer
-async def verify_answer(guess: str, data: dict):
+async def verify_answer(guess: str, game_id: int, data: dict):
     async with httpx.AsyncClient() as client:
-        params = {"answer_guess": guess}
+        params = {"answer_guess": guess, "game_id": game_id}
         r = await client.get('http://127.0.0.1:5100/validate-answer', params=params)
         data.update(dict(r.json()))
 
@@ -105,19 +91,19 @@ async def running_game(game_id: int, user_id: UUID, guess: str):
         r = client.get('http://127.0.0.1:5000/validate-guess', params=params)
         if r.status_code == httpx.codes.OK:
             is_verify = True
-        params = {"user_id": user_id, "game_id": game_id}
-        r = client.get('http://127.0.0.1:5300/get-state-game', params=params)
-        curr = dict(r.json())
-        data["remaining"] = 6 - int(curr.get("counter"))
+        if is_verify:
+            params = {"user_id": user_id, "game_id": game_id}
+            r = client.get('http://127.0.0.1:5300/get-state-game', params=params)
+            curr = dict(r.json())
+            data["remaining"] = 6 - int(curr.get("counter"))
 
         if not is_verify or not data.get("remaining"):
             data["Status"] = "invalid"
             return data
     await asyncio.gather(
         update_guess(game_id, user_id, guess, data),
-        verify_answer(guess, data)
+        verify_answer(guess, game_id, data)
     )
-    data["Status"] = "incorrect"
     curr = data.get("correct")
     if len(curr) == 5:
         data.update({"Status": "win"})
@@ -126,11 +112,13 @@ async def running_game(game_id: int, user_id: UUID, guess: str):
             get_result(user_id, data)
         )
         return data
-    elif len(curr) < 5 and not data.get("remaining"):
+    if len(curr) < 5 and not data.get("remaining"):
         data.update({"Status": "lose"})
         await asyncio.gather(
             record_result(user_id, game_id, 0, data),
             get_result(user_id, data)
         )
         return data
-    return data
+    if len(curr) < 5 and data.get("remaining"):
+        data["Status"] = "incorrect"
+        return data

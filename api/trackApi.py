@@ -2,8 +2,8 @@ import logging.config
 import sqlite3
 import contextlib
 import redis
-from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
-from pydantic import BaseModel, BaseSettings, Field
+from fastapi import FastAPI, Depends, Response, HTTPException, status
+from pydantic import BaseModel, BaseSettings
 import uuid
 from uuid import UUID
 from datetime import datetime
