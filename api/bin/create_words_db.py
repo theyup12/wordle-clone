@@ -33,7 +33,6 @@ def get_word_list():
 
 
 def make_database(words_five):
-    """Using the words retrived make a database of words"""
     file_exists = os.path.exists("../var/word.db")
     connection = sqlite3.connect("../var/word.db")
     cursor = connection.cursor()
