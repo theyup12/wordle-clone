@@ -7,6 +7,8 @@ from pydantic import BaseModel, BaseSettings
 import uuid
 from uuid import UUID
 from datetime import datetime
+
+
 # connect database setting from .env file
 # convert data from stats.db to populated.sql
 # sqlite3 ./var/stats.db .dump > ./share/track/populated.sql
@@ -22,6 +24,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 # Base model for getting guess word
 
@@ -41,6 +44,8 @@ class UserStats(BaseModel):
     games_played: int
     games_won: int
     average_guesses: int
+
+
 # connect database with word_list.sql
 
 
@@ -48,6 +53,8 @@ def get_db():
     with contextlib.closing(sqlite3.connect(settings.user_database)) as db:
         db.row_factory = sqlite3.Row
         yield db
+
+
 # use for debug the code
 
 
@@ -59,7 +66,29 @@ settings = Settings()
 app = FastAPI()
 
 logging.config.fileConfig(settings.logging_config)
+
+
 # getting all the word from the word_list database and display
+
+@app.get("/is-recorded", status_code=status.HTTP_200_OK)
+def check_recorded(user_uuid: UUID, game_id: int, db: sqlite3.Connection = Depends(get_db)):
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    cur = db.execute("SELECT user_id FROM users WHERE user_uuid = ?", [user_uuid])
+    current_user = cur.fetchone()[0]
+    if int(current_user) % 3 == 0:
+        db.execute("ATTACH './var/stats_s1.db' as stats")
+    elif int(current_user) % 3 == 1:
+        db.execute("ATTACH './var/stats_s2.db' as stats")
+    else:
+        db.execute("ATTACH './var/stats_s3.db' as stats")
+
+    curr = db.execute("SELECT user_id From stats.games WHERE user_uuid = ? AND game_id = ? ", [user_uuid, game_id])
+    rows = curr.fetchall()
+    if rows:
+        return rows
+    else:
+        raise HTTPException(status_code=404, detail="NOT FOUND")
 
 
 @app.post("/game-result", status_code=status.HTTP_201_CREATED)
@@ -196,4 +225,3 @@ def streak_stats():
     for user in curr:
         res.append({'username': user[0], 'streaks': user[1]})
     return {"Top-10 Users": res}
-

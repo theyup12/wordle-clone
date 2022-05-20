@@ -100,6 +100,46 @@ def update_game(user_id: UUID, current_game: int, guess_word: str):
     return {"current_id": cur_id, "list": cur, "counter": cur_count}
 
 
+@app.post("/create-status")
+def check_status(user_id: UUID, game_id: int):
+    delim: str = ":"
+    cur_id = f"{user_id}{delim}contains"
+    if not db.exists(cur_id):
+        db.set(cur_id, game_id)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Already exist"
+        )
+    cur = db.get(cur_id)
+    return {"current_id": cur_id, "data": cur}
+
+
+@app.get("/get-status")
+def get_status(user_id: UUID):
+    delim: str = ":"
+    cur_id = f"{user_id}{delim}contains"
+    if not db.exists(cur_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="NOT FOUND"
+        )
+    else:
+        cur = db.get(cur_id)
+        return {"data": cur}
+
+
+@app.delete("/delete-status/{user_id}")
+def delete_status(user_id: UUID):
+    delim: str = ":"
+    cur_id = f"{user_id}{delim}contains"
+    if not db.exists(cur_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="NOT FOUND"
+        )
+    else:
+        db.delete(cur_id)
+        return {"status": "deleted"}
+
+
 @app.get("/get-state-game")
 def get_state_game(user_id: UUID, game_id: int):
     delim: str = ":"
