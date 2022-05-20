@@ -50,4 +50,4 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 api: uvicorn --port $PORT api:app --reload --root-path /api/v1
 answers: uvicorn --port $PORT answersApi:app --reload --root-path /answers/v2
 track: uvicorn --port $PORT trackApi:app --reload --root-path /track/v3
-state: uvicorn --port $PORT currentState:app --reload --root-path /state/v4
+state: uvicorn --port $PORT currentStateApi:app --reload --root-path /state/v4

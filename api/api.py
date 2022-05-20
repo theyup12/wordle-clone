@@ -17,9 +17,6 @@ class Settings(BaseSettings):
 
 # Base model for getting guess word
 
-
-class Guess(BaseModel):
-    word: str
 # connect database with word_list.sql
 
 
@@ -39,6 +36,7 @@ app = FastAPI()
 logging.config.fileConfig(settings.logging_config)
 # getting all the word from the word_list database and display
 
+
 @app.get("/list-words/")
 def list_words(db: sqlite3.Connection = Depends(get_db)):
     words = db.execute("SELECT * FROM words")
@@ -46,56 +44,52 @@ def list_words(db: sqlite3.Connection = Depends(get_db)):
 # check if the guess word is five-letters word
 
 
-@app.get("/validate-guess/{guess}")
-def validate_guess(guess: str):
-    if (len(guess) != 5):
-        return {"validGuess": False}
-    return {"validGuess": True}
+@app.get("/validate-guess")
+def validate_guess(guess: str, db: sqlite3.Connection = Depends(get_db)):
+    cur = db.execute("SELECT word FROM words WHERE word = ?", [guess])
+    curr = cur.fetchall()
+    if not curr:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="word not found"
+        )
+    return {"word": curr[0][0]}
 # adding possible guess into the word_list.db, and check if the word exists and valid five-letter
 
 
 @app.post("/add-guess/")
-def add_guess(guess: Guess,  response: Response, db: sqlite3.Connection = Depends(get_db)):
-    res = dict(guess)
-    valid_guess = dict(validate_guess(guess.word))
-    valid = valid_guess["validGuess"]
-    cur = db.execute("SELECT EXISTS(SELECT * FROM words WHERE word = ? LIMIT 1)", [guess.word])
-    exist = int(cur.fetchone()[0])
+def add_guess(guess: str,  response: Response, db: sqlite3.Connection = Depends(get_db)):
+    cur = db.execute("SELECT word FROM words WHERE word = ?", [guess])
+    exist = cur.fetchall()
     # check if the guess valid and exist
-    if valid and not exist:
+    if not exist and len(guess) == 5:
         try:
             # add word into the list_word database
-            add_word = db.execute("""INSERT INTO words(word) VALUES(?)""", [res["word"]])
+            db.execute("""INSERT INTO words(word) VALUES(?)""", [guess])
             db.commit()
         except sqlite3.IntegrityError as error:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"type": type(error).__name__, "msg": str(error)}
             )
-        res["id"] = add_word.lastrowid
-        # return the id and the word
-        return res
+        return {"added_guess": guess}
     return {"status": "word already exists or invalid guess"}
 # delete the guess word from the word_list.db, and check if the word exists
 
 
 @app.delete("/delete-guess/")
-def delete_guess(guess: Guess,  response: Response, db: sqlite3.Connection = Depends(get_db)):
-    # insert into dict first
-    res = dict(guess)
+def delete_guess(guess: str,  response: Response, db: sqlite3.Connection = Depends(get_db)):
     # check if the word exists
-    cur = db.execute("SELECT EXISTS(SELECT * FROM words WHERE word = ? LIMIT 1)", [guess.word])
-    exist = int(cur.fetchone()[0])
+    cur = db.execute("SELECT word FROM words WHERE word = ?", [guess])
+    exist = cur.fetchall()
     if exist:
         try:
             # delete the word from the database
-            delete_word = db.execute("""DELETE FROM words WHERE word = ? LIMIT 1""", [guess.word])
+            db.execute("""DELETE FROM words WHERE word = ?""", [guess])
             db.commit()
         except sqlite3.IntegrityError as error:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"type": type(error).__name__, "msg": str(error)}
             )
-        res["id"] = delete_word.lastrowid
-        return res
+        return {"Deleted_guess": guess}
     return {"status": "word not found"}

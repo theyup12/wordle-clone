@@ -2,10 +2,13 @@ import logging.config
 import sqlite3
 import contextlib
 import redis
-from fastapi import FastAPI, Depends, Response, HTTPException, status, Request
+from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
 import uuid
+from uuid import UUID
 from datetime import datetime
+
+
 # connect database setting from .env file
 # convert data from stats.db to populated.sql
 # sqlite3 ./var/stats.db .dump > ./share/track/populated.sql
@@ -21,6 +24,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 # Base model for getting guess word
 
@@ -40,6 +44,8 @@ class UserStats(BaseModel):
     games_played: int
     games_won: int
     average_guesses: int
+
+
 # connect database with word_list.sql
 
 
@@ -47,6 +53,8 @@ def get_db():
     with contextlib.closing(sqlite3.connect(settings.user_database)) as db:
         db.row_factory = sqlite3.Row
         yield db
+
+
 # use for debug the code
 
 
@@ -56,23 +64,18 @@ def get_logger():
 
 settings = Settings()
 app = FastAPI()
-    # servers=[{"url": "http://127.0.0.1:9999/api/v1/docs", "description": "dictionary"},
-    # {"url": "http://127.0.0.1:9999/answers/v2", "description": "guesses"},
-    # {"url": "http://127.0.0.1:9999/track/v3", "description": "track stats"}]
-
-
-@app.get("/app")
-def read_main(request: Request):
-    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
 
 logging.config.fileConfig(settings.logging_config)
+
+
 # getting all the word from the word_list database and display
 
-
-@app.post("/game-result/{current_user}", status_code=status.HTTP_201_CREATED)
-def post_result(current_user: int, game: GameResult, response: Response, db: sqlite3.Connection = Depends(get_db)):
+@app.get("/is-recorded", status_code=status.HTTP_200_OK)
+def check_recorded(user_uuid: UUID, game_id: int, db: sqlite3.Connection = Depends(get_db)):
     sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
     sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    cur = db.execute("SELECT user_id FROM users WHERE user_uuid = ?", [user_uuid])
+    current_user = cur.fetchone()[0]
     if int(current_user) % 3 == 0:
         db.execute("ATTACH './var/stats_s1.db' as stats")
     elif int(current_user) % 3 == 1:
@@ -80,11 +83,30 @@ def post_result(current_user: int, game: GameResult, response: Response, db: sql
     else:
         db.execute("ATTACH './var/stats_s3.db' as stats")
 
-    cur = db.execute("SELECT user_uuid FROM users WHERE user_id = ?", [current_user])
-    uid = cur.fetchone()[0]
+    curr = db.execute("SELECT user_id From stats.games WHERE user_uuid = ? AND game_id = ? ", [user_uuid, game_id])
+    rows = curr.fetchall()
+    if rows:
+        return rows
+    else:
+        raise HTTPException(status_code=404, detail="NOT FOUND")
+
+
+@app.post("/game-result", status_code=status.HTTP_201_CREATED)
+def post_result(user_uuid: UUID, game: GameResult, response: Response, db: sqlite3.Connection = Depends(get_db)):
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    cur = db.execute("SELECT user_id FROM users WHERE user_uuid = ?", [user_uuid])
+    current_user = cur.fetchone()[0]
+    if int(current_user) % 3 == 0:
+        db.execute("ATTACH './var/stats_s1.db' as stats")
+    elif int(current_user) % 3 == 1:
+        db.execute("ATTACH './var/stats_s2.db' as stats")
+    else:
+        db.execute("ATTACH './var/stats_s3.db' as stats")
+
     g = dict(game)
     g.update({"user_id": current_user})
-    g.update({"user_uuid": uid})
+    g.update({"user_uuid": user_uuid})
     try:
         # first find the uuid from the user table and then transfer to games table
         add_game = db.execute(
@@ -101,16 +123,18 @@ def post_result(current_user: int, game: GameResult, response: Response, db: sql
             detail={"type": type(error).__name__, "msg": str(error)}
         )
     g["id"] = add_game.lastrowid
-    g["user_uuid"] = str(uid)
+    g["user_uuid"] = str(user_uuid)
     response.headers["Location"] = f"/game-result/{g['id']}"
     return g
 
 
-@app.get("/wordle-statistics/{current_user}/{current_date}")
-def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = Depends(get_db)):
+@app.get("/wordle-statistics")
+def game_stats(user_uuid: UUID, current_date: str, db: sqlite3.Connection = Depends(get_db)):
     # find the uuid using the user id from the user table and then find it from the game table
     sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
     sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    cur = db.execute("SELECT user_id FROM users WHERE user_uuid = ?", [user_uuid])
+    current_user = cur.fetchone()[0]
     if int(current_user) % 3 == 0:
         db.execute("ATTACH './var/stats_s1.db' as stats")
     elif int(current_user) % 3 == 1:
@@ -118,14 +142,14 @@ def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = De
     else:
         db.execute("ATTACH './var/stats_s3.db' as stats")
 
-    cur = db.execute("SELECT user_uuid FROM users WHERE user_id = ?", [current_user])
-    uid = cur.fetchone()[0]
+    # cur = db.execute("SELECT user_uuid FROM users WHERE user_id = ?", [current_user])
+    # uid = cur.fetchone()[0]
 
     current_stats = db.execute(
-        """SELECT guesses,won FROM stats.games WHERE user_uuid = ? ORDER BY finished """, [uid]
+        """SELECT guesses,won FROM stats.games WHERE user_uuid = ? ORDER BY finished """, [user_uuid]
     )
     streaks_stats = db.execute(
-        """SELECT streak, beginning, ending FROM stats.streaks WHERE user_uuid = ? ORDER BY streak DESC""", [uid]
+        """SELECT streak, beginning, ending FROM stats.streaks WHERE user_uuid = ? ORDER BY streak DESC""", [user_uuid]
     )
     rows = current_stats.fetchall()
     streaks_rows = streaks_stats.fetchall()
@@ -167,8 +191,24 @@ def game_stats(current_user: int, current_date: str, db: sqlite3.Connection = De
     return {"game-statistics": stats}
 
 
+@app.get("/user-data")
+def search_user(username: str, db: sqlite3.Connection = Depends(get_db)):
+    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+    sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+    try:
+        cur = db.execute("SELECT * FROM users WHERE username = ?", [username])
+    except sqlite3.IntegrityError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"type": type(error).__name__, "msg": str(error)}
+        )
+    curr = cur.fetchone()
+    info = {"user_uuid": uuid.UUID(bytes_le=curr[0]), "username": curr[2]}
+    return info
+
+
 @app.get("/top-wins-users/")
-def win_stats(db: sqlite3.Connection = Depends(get_db)):
+def win_stats():
     db = redis.Redis(host="localhost", port=6379)
     curr = db.zrevrange("Top-wins", 0, 9, withscores=True)
     res = []
@@ -178,11 +218,10 @@ def win_stats(db: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/top-streaks-users")
-def streak_stats(db: sqlite3.Connection = Depends(get_db)):
+def streak_stats():
     db = redis.Redis(host="localhost", port=6379)
     curr = db.zrevrange("Top-streaks", 0, 9, withscores=True)
     res = []
     for user in curr:
         res.append({'username': user[0], 'streaks': user[1]})
     return {"Top-10 Users": res}
-
