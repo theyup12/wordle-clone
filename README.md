@@ -27,8 +27,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 ### 3. Project 4 => Then run the command:
     ### To initialize the database, type:
         cd into the api folder directory wordle-project3/api
-        ./bin/init_s1.sh
-        ./bin/init_s2.sh
+        ./bin/init.sh
         python3 shard.py in bin file
     ### To start the uvicorn servers, type:
         foreman start -m api=1,answersApi=1,trackApi=3
