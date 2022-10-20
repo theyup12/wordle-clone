@@ -46,3 +46,29 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
   ### This will show the above command is working:
       crontab -l
 
+
+## Previews
+
+User Guessing Management Microservices
+![](Images/add_word.png)
+
+Answers Management Microservices
+![](Images/check_answer.png)
+
+User Stats Microservices
+![](Images/stats.png)
+
+Update Game Microservices
+![](Images/status.png)
+
+Wordle back-end Services
+![](Images/overall.png)
+
+Login and Create User
+![](Images/create_user.png)
+
+User Guess and game answers
+![](Images/playing2.png)
+
+Current User Stats After Success
+![](Images/success.png)
