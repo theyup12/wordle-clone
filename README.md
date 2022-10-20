@@ -45,8 +45,3 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
   ### This will show the above command is working:
       crontab -l
 
-
-api: uvicorn --port $PORT api:app --reload --root-path /api/v1
-answers: uvicorn --port $PORT answersApi:app --reload --root-path /answers/v2
-track: uvicorn --port $PORT trackApi:app --reload --root-path /track/v3
-state: uvicorn --port $PORT currentStateApi:app --reload --root-path /state/v4
