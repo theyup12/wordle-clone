@@ -37,6 +37,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 ### 4. Project => Run the command:
       cd into the wordle-clone/api/bin
   ### Get sql data and transport to redis:
+      redis-server
       python3 materialize.py
   ### crontab initialization for every 10 minutes:
       crontab -e
