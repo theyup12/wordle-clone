@@ -49,26 +49,26 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 
 ## Previews
 
-User Guessing Management Microservices
+### User Guessing Management Microservices
 ![](Images/add_word.PNG)
 
-Answers Management Microservices
+### Answers Management Microservices
 ![](Images/check_answer.PNG)
 
-User Stats Microservices
+### User Stats Microservices
 ![](Images/stats.PNG)
 
-Update Game Microservices
+### Update Game Microservices
 ![](Images/status.PNG)
 
-Wordle back-end Services
+### Wordle back-end Services
 ![](Images/overall.PNG)
 
-Login and Create User
+### Login and Create User
 ![](Images/create_user.PNG)
 
-User Guess and game answers
+### User Guess and game answers
 ![](Images/playing2.PNG)
 
-Current User Stats After Game
+### Current User Stats After Game
 ![](Images/success.PNG)
