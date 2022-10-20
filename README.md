@@ -24,7 +24,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
 ### 2. Install FastAPI:
     python3 -m pip install 'fastapi[all]'
 
-### 3. Project 4 => Then run the command:
+### 3. Project => Then run the command:
     ### To initialize the database, type:
         cd into the api folder directory wordle-project3/api
         ./bin/init.sh
@@ -34,7 +34,7 @@ require user install fastapi, ruby-foreman, sqlite3, and httpie, faker,
     ### To start the Traefik files type:
         ./traefik --configFile=traefik.toml
 
-### 4. Project 4 => Run the command:
+### 4. Project => Run the command:
       cd into the wordle-clone/api/bin
   ### Get sql data and transport to redis:
       python3 materialize.py
